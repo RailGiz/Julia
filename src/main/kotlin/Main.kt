@@ -4,19 +4,23 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
-//Двойной клик - увеличение
-//Один клик передвигает
-//Долгий клик - уменьшение
+import kotlinx.coroutines.*
+
 @Composable
 fun JuliaSet() {
     var scale by remember { mutableStateOf(0.9f) }
     var offsetX by remember { mutableStateOf(0f) }
     var offsetY by remember { mutableStateOf(0f) }
+    var drawData by remember { mutableStateOf(listOf<Pair<Offset, Color>>()) }
+
+    LaunchedEffect(key1 = scale, key2 = offsetX, key3 = offsetY) {
+        drawData = calculateJuliaSet(scale, offsetX, offsetY)
+    }
 
     Canvas(modifier = Modifier
         .fillMaxSize()
@@ -41,37 +45,39 @@ fun JuliaSet() {
                 }
             )
         }) {
-        drawJuliaSet(scale, offsetX, offsetY)
+        for ((offset, color) in drawData) {
+            drawRect(color = color, topLeft = offset, size = Size(1f, 1f))
+        }
     }
 }
 
-fun DrawScope.drawJuliaSet(scale: Float, offsetX: Float, offsetY: Float) {
-    val width = size.width.toInt()
-    val height = size.height.toInt()
-    val movex = offsetX / width - 0.5f
-    val moveY = offsetY / height - 0.5f
-    val maxiterations = 300
-    val cX = -0.7f
-    val cY = 0.27015f
+suspend fun calculateJuliaSet(scale: Float, offsetX: Float, offsetY: Float): List<Pair<Offset, Color>> {
+    return withContext(Dispatchers.Default) {
+        val width = 1928
+        val height = 1080
+        val movex = offsetX / width - 0.5f
+        val moveY = offsetY / height - 0.5f
+        val maxiterations = 300
+        val cX = -0.7f
+        val cY = 0.27015f
+        val drawData = mutableListOf<Pair<Offset, Color>>()
 
-    for (x in 0 until width) {
-        for (y in 0 until height) {
-            var zx = 1.5f * (x - width / 2) / (0.5f * scale * width) + movex
-            var zy = (y - height / 2) / (0.5f * scale * height) + moveY
-            var i = maxiterations
-            while (zx * zx + zy * zy < 4 && i > 0) {
-                val tmp = zx * zx - zy * zy + cX
-                zy = 2.0f * zx * zy + cY
-                zx = tmp
-                i--
+        for (x in 0 until width) {
+            for (y in 0 until height) {
+                var zx = 1.5f * (x - width / 2) / (0.5f * scale * width) + movex
+                var zy = (y - height / 2) / (0.5f * scale * height) + moveY
+                var i = maxiterations
+                while (zx * zx + zy * zy < 4 && i > 0) {
+                    val tmp = zx * zx - zy * zy + cX
+                    zy = 2.0f * zx * zy + cY
+                    zx = tmp
+                    i--
+                }
+                val ratio = i.toFloat() / maxiterations
+                drawData.add(Pair(Offset(x.toFloat(), y.toFloat()), Color(ratio, ratio, ratio, 1f)))
             }
-            val ratio = i.toFloat() / maxiterations
-            drawRect(
-                color = Color(ratio, ratio, ratio, 1f),
-                topLeft = Offset(x.toFloat(), y.toFloat()),
-                size = androidx.compose.ui.geometry.Size(1f, 1f)
-            )
         }
+        drawData
     }
 }
 

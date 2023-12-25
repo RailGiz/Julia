@@ -21,7 +21,10 @@ fun JuliaSet() {
 
     LaunchedEffect(key1 = scale, key2 = offsetX, key3 = offsetY) {
         isLoading = true
+        val startTime = System.currentTimeMillis()
         drawData = calculateJuliaSet(scale, offsetX, offsetY)
+        val endTime = System.currentTimeMillis()
+        println("Time taken: ${endTime - startTime} ms")
         isLoading = false
     }
 
@@ -67,7 +70,7 @@ suspend fun calculateJuliaSet(scale: Float, offsetX: Float, offsetY: Float): Lis
         val cY = 0.27015f
         val drawData = mutableListOf<Pair<Offset, Color>>()
 
-        val numThreads = 12
+        val numThreads = 11
         val jobs = List(numThreads) { i ->
             launch {
                 val startY = i * height / numThreads

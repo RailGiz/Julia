@@ -61,8 +61,8 @@ fun JuliaSet() {
 
 suspend fun calculateJuliaSet(scale: Float, offsetX: Float, offsetY: Float): List<Pair<Offset, Color>> {
     return withContext(Dispatchers.Default) {
-        val width = 1928
-        val height = 1080
+        val width = 500
+        val height = 500
         val movex = offsetX / width - 0.5f
         val moveY = offsetY / height - 0.5f
         val maxiterations = 300
@@ -96,6 +96,38 @@ suspend fun calculateJuliaSet(scale: Float, offsetX: Float, offsetY: Float): Lis
         }
         jobs.forEach { it.join() }
         drawData
+
+        /* val numThreadsVertical = 12
+        val numThreadsHorizontal = 12
+        val jobs = List(numThreadsVertical) { i ->
+            List(numThreadsHorizontal) { j ->
+                launch {
+                    val startX = j * width / numThreadsHorizontal
+                    val endX = (j + 1) * width / numThreadsHorizontal
+                    val startY = i * height / numThreadsVertical
+                    val endY = (i + 1) * height / numThreadsVertical
+                    for (x in startX until endX) {
+                        for (y in startY until endY) {
+                            var zx = 1.5f * (x - width / 2) / (0.5f * scale * width) + movex
+                            var zy = (y - height / 2) / (0.5f * scale * height) + moveY
+                            var iter = maxiterations
+                            while (zx * zx + zy * zy < 4 && iter > 0) {
+                                val tmp = zx * zx - zy * zy + cX
+                                zy = 2.0f * zx * zy + cY
+                                zx = tmp
+                                iter--
+                            }
+                            val ratio = iter.toFloat() / maxiterations
+                            synchronized(drawData) {
+                                drawData.add(Pair(Offset(x.toFloat(), y.toFloat()), Color(ratio, ratio, ratio, 1f)))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        jobs.flatten().forEach { it.join() }
+        drawData*/
     }
 }
 

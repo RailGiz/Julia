@@ -58,8 +58,8 @@ fun JuliaSet() {
 
 suspend fun calculateJuliaSet(scale: Float, offsetX: Float, offsetY: Float): List<Pair<Offset, Color>> {
     return withContext(Dispatchers.Default) {
-        val width = 1928 // replace with actual width
-        val height = 1080 // replace with actual height
+        val width = 1928
+        val height = 1080
         val movex = offsetX / width - 0.5f
         val moveY = offsetY / height - 0.5f
         val maxiterations = 300
@@ -67,21 +67,26 @@ suspend fun calculateJuliaSet(scale: Float, offsetX: Float, offsetY: Float): Lis
         val cY = 0.27015f
         val drawData = mutableListOf<Pair<Offset, Color>>()
 
-        val jobs = List(width) { x ->
+        val numThreads = 12
+        val jobs = List(numThreads) { i ->
             launch {
-                for (y in 0 until height) {
-                    var zx = 1.5f * (x - width / 2) / (0.5f * scale * width) + movex
-                    var zy = (y - height / 2) / (0.5f * scale * height) + moveY
-                    var i = maxiterations
-                    while (zx * zx + zy * zy < 4 && i > 0) {
-                        val tmp = zx * zx - zy * zy + cX
-                        zy = 2.0f * zx * zy + cY
-                        zx = tmp
-                        i--
-                    }
-                    val ratio = i.toFloat() / maxiterations
-                    synchronized(drawData) {
-                        drawData.add(Pair(Offset(x.toFloat(), y.toFloat()), Color(ratio, ratio, ratio, 1f)))
+                val startY = i * height / numThreads
+                val endY = (i + 1) * height / numThreads
+                for (x in 0 until width) {
+                    for (y in startY until endY) {
+                        var zx = 1.5f * (x - width / 2) / (0.5f * scale * width) + movex
+                        var zy = (y - height / 2) / (0.5f * scale * height) + moveY
+                        var iter = maxiterations
+                        while (zx * zx + zy * zy < 4 && iter > 0) {
+                            val tmp = zx * zx - zy * zy + cX
+                            zy = 2.0f * zx * zy + cY
+                            zx = tmp
+                            iter--
+                        }
+                        val ratio = iter.toFloat() / maxiterations
+                        synchronized(drawData) {
+                            drawData.add(Pair(Offset(x.toFloat(), y.toFloat()), Color(ratio, ratio, ratio, 1f)))
+                        }
                     }
                 }
             }
@@ -96,5 +101,3 @@ fun main() = application {
         JuliaSet()
     }
 }
-
-
